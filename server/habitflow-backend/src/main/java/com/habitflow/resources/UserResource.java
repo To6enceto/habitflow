@@ -1,25 +1,39 @@
 package com.habitflow.resources;
 
+
+import com.habitflow.entities.Habit;
 import com.habitflow.entities.User;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.List;
+
 @Path("/users")
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
 public class UserResource {
 
     @POST
     @Transactional
-    @Consumes(MediaType.APPLICATION_JSON)
     public Response createUser(User user) {
-        // You could add validation logic here if needed
         user.persist();
         return Response
                 .status(Response.Status.CREATED)
                 .entity("User created with ID: " + user.id)
                 .build();
+    }
+    
+    @GET
+    @Path("/{id}/habits")
+    public Response getUserHabits(@PathParam("id") Long userId) {
+        User user = User.findById(userId);
+        if(user == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("User not found").build();
+        }
+
+        List<Habit> habits = Habit.list("user", user);
+        return Response.ok(habits).build();
     }
 }
