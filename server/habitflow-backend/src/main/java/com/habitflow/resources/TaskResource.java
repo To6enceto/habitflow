@@ -45,4 +45,47 @@ public class TaskResource {
                 .entity("Task created with ID: " + task.id)
                 .build();
     }
+
+    @GET 
+    @Path("/user/{userId}")
+    public Response getTaskByUser(@PathParam("userId") Long userId) {
+        User user = User.findById(userId);
+        if(user == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("User not found").build();
+        }
+
+        List<Task> tasks = Task.list("user", user);
+        return Response.ok(tasks).build();
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Transactional
+    public Response updateTask(@PathParam("id") Long id, TaskRequest request) {
+        Task task = Task.findById(id);
+        if(task == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Task not found").build();
+        }
+
+        if(request.title != null) task.title = request.title;
+        if(request.description != null) task.description = request.description;
+        if(request.dueDate != null) task.dueDate = LocalDate.parse(request.dueDate);
+        if(request.completed != null) task.completed = request.completed;
+
+        return Response.ok("Task updated successfully").build();
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Transactional
+    public Response deleteTask(@PathParam("id") Long id) {
+        Task task = Task.findById(id);
+        if(task == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Task not found").build();
+        }
+
+        task.delete();
+        return Response.ok("Task deleted successfully").build();
+    }
+
 }
