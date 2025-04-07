@@ -4,14 +4,20 @@ package com.habitflow.resources;
 import com.habitflow.entities.Habit;
 import com.habitflow.entities.User;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.List;
+
 @Path("/habits")
+@Produces(MediaType.APPLICATION_JSON)
 public class HabitResource {
+
+    public static class HabitRequest {
+        public String name;
+        public Long userId;
+    }
     
     @POST
     @Transactional
@@ -33,8 +39,39 @@ public class HabitResource {
                 .build();
     }
 
-    public static class HabitRequest {
-        public String name;
-        public Long userId;
+    @GET
+    @Path("/{id}")
+    public Response getHabit(@PathParam("id") Long id) {
+        Habit habit = Habit.findById(id);
+        if (habit == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Habit not found").build();
+        }
+        return Response.ok(habit).build();
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Transactional
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateHabit(@PathParam("id") Long id, HabitRequest request) {
+        Habit habit = Habit.findById(id);
+        if(habit == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Habit not found").build();
+        }
+        habit.name = request.name;
+        return Response.ok("Habit updated successfully").build();
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Transactional
+    public Response deleteHabit(@PathParam("id") Long id) {
+        Habit habit = Habit.findById(id);
+        if(habit == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Habit not found").build();
+        }
+
+        habit.delete();
+        return Response.ok("Habit deleted successfully").build();
     }
 }
