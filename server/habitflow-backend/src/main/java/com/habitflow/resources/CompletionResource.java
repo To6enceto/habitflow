@@ -111,4 +111,12 @@ public class CompletionResource {
         completion.delete();
         return Response.noContent().build();// 204 No Content
     }
+
+    @GET
+    @Path("/user/{userId}")
+    public Response getUserCompletions(@PathParam("userId") Long userId) {
+        List<Completion> completions = Completion.find("habit.user.id", userId).list();
+
+        return Response.ok(completions).build();
+    }
 }
