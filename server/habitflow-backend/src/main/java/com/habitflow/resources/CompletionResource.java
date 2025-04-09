@@ -31,6 +31,12 @@ public class CompletionResource {
 
         LocalDate completionDate = request.date != null ? LocalDate.parse(request.date) : LocalDate.now();
 
+        if (completionDate.isAfter(LocalDate.now())) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity("Cannot complete a habit for a future date").build(); 
+        }
+        
+
         boolean exists = Completion.count("habit = ?1 and date = ?2", habit, completionDate) > 0;
         if (exists) {
             return Response.status(Response.Status.CONFLICT)
