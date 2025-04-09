@@ -1,10 +1,12 @@
 package com.habitflow.resources;
 
 
+import com.habitflow.dto.DashboardResponse;
 import com.habitflow.dto.HabitStreakResponse;
 import com.habitflow.entities.Completion;
 import com.habitflow.entities.Habit;
 import com.habitflow.entities.User;
+import com.habitflow.entities.Task;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -88,6 +90,57 @@ public class UserResource {
         }
     
         return Response.ok(response).build();
+    }
+
+    @GET
+    @Path("/{id}/dashboard")
+    public Response getUserDashboard(@PathParam("id") Long userId) {
+        User user = User.findById(userId);
+        if (user == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("User not found").build();
+        }
+
+        int totalHabits = (int) Habit.count("user", user);
+        int totalTasks = (int) Task.count("user", user);
+        int completedTasks = (int) Task.count("user = ?1 and completed = true", user);
+
+        int maxStreak = 0;
+        List<Habit> habits = Habit.list("user", user);
+        LocalDate today = LocalDate.now();
+
+        for(Habit habit : habits) {
+            List<Completion> completions = Completion.list("habit = ?1 and date <= ?2 order by date desc", habit, LocalDate.now());
+
+            int streak = 0;
+
+            if(!completions.isEmpty()) {
+
+                LocalDate previous = completions.get(0).date;
+
+                if (previous.equals(today) || previous.equals(today.minusDays(1))) {
+                    streak = 1;
+
+                    for (int i = 1; i < completions.size(); i++) {
+                        LocalDate current = completions.get(i).date;
+    
+                        if (previous.minusDays(1).equals(current)) {
+                            streak++;
+                            previous = current;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                
+            }
+            
+            if(streak > maxStreak) {
+                maxStreak = streak;
+            }
+        }
+
+        DashboardResponse dashboard = new DashboardResponse(totalHabits, totalTasks, completedTasks, maxStreak);
+        return Response.ok(dashboard).build();
     }
     
 }
