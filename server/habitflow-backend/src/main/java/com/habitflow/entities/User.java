@@ -4,6 +4,8 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+import io.quarkus.elytron.security.common.BcryptUtil;
+
 @Entity
 @Table(name = "users")
 public class User extends PanacheEntity{
@@ -20,5 +22,13 @@ public class User extends PanacheEntity{
     @PrePersist
     public void prePersist(){ 
         this.createdAt = LocalDateTime.now();
+    }
+
+    public void hashPassword() {
+        this.password = BcryptUtil.bcryptHash(password);
+    }
+
+    public boolean checkPassword(String rawPassword){
+        return BcryptUtil.matches(rawPassword, this.password);
     }
 }

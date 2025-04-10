@@ -2,6 +2,7 @@ package com.habitflow.resources;
 
 import com.habitflow.dto.LoginRequest;
 import com.habitflow.dto.LoginResponse;
+import com.habitflow.dto.RegisterRequest;
 import com.habitflow.entities.User;
 import com.habitflow.util.JwtUtils;
 
@@ -19,7 +20,8 @@ public class AuthResource {
     @Transactional
     public Response login(LoginRequest request){
         User user = User.find("email", request.email).firstResult();
-        if(user == null || !user.password.equals(request.password)) {
+        
+        if(user == null || !user.checkPassword(request.password)) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity("Invalid email or password")
                     .build();
@@ -27,6 +29,23 @@ public class AuthResource {
 
         String token = JwtUtils.generateToken(user.email, user.id);
         return Response.ok(new LoginResponse(token)).build();
+    }
+
+    @POST 
+    @Path("/register")
+    @Transactional
+    public Response register(RegisterRequest request) {
+        if(User.find("email", request.email).firstResult() != null) {
+            return Response.status(Response.Status.CONFLICT).entity("Email already registered").build();
+        }
+
+        User user = new User();
+        user.email = request.email;
+        user.password = request.password;
+        user.hashPassword();
+        user.persist();
+
+        return Response.status(Response.Status.CREATED).entity("User registered successfully").build();
     }
     
 }
